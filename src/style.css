@@ -1,0 +1,12 @@
+body { font: 16px system-ui, sans-serif; margin: 24px; color: #222; }
+main { max-width: 1200px; margin: auto; }
+h1 { font-size: 24px; }
+form, section { border: 1px solid #ccc; padding: 12px; }
+button, select, input { font: inherit; margin: 6px; max-width: 100%; }
+button { cursor: pointer; padding: 6px 12px; }
+button:disabled { cursor: wait; }
+figure { margin: 20px 0; }
+img { max-width: 100%; height: auto; }
+.status { white-space: pre-wrap; overflow-wrap: anywhere; min-height: 24px; }
+.note { color: #555; }
+details { margin-top: 16px; }

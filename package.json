@@ -1,0 +1,23 @@
+{
+  "name": "floor-csv-viewer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "start": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node tests/python.test.mjs"
+  },
+  "dependencies": {
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "pyodide": "314.0.6",
+    "vite": "6.4.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

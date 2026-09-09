@@ -9,6 +9,7 @@ import model
 CHARTS = {'overview', 'attributes', 'apartments', 'orientation', 'openings',
           'room_types', 'ceiling_heights', 'window_heights', 'wwr_distribution', 'wwr_by_type'}
 ATTRIBUTES = {'wwr', 'room_area', 'window_area', 'ceiling_height', 'window_count'}
+LAYOUTS = {'overview', 'attributes', 'apartments', 'orientation', 'openings'}
 
 def handle(payload):
     data = json.loads(payload)
@@ -23,9 +24,21 @@ def handle(payload):
     attribute = data.get('attribute', 'wwr')
     if attribute not in ATTRIBUTES:
         raise ValueError('Unknown room attribute.')
+    apartment = data.get('apartment') or None
+    if apartment is not None and data['chart'] in LAYOUTS:
+        options = model.apartment_options()
+        allowed = {uid for ids in options.values() for uid in ids} if data['chart'] == 'overview' else options[plan]
+        if apartment not in allowed:
+            raise ValueError('This apartment is not in the selected plan/floor.')
     plt.close('all')
     try:
-        fig = importlib.import_module(data['chart']).render(plan, attribute)
+        module = importlib.import_module(data['chart'])
+        fig = module.render(plan, attribute, apartment) if data['chart'] in LAYOUTS else module.render(plan, attribute)
+        if apartment is not None and data['chart'] in LAYOUTS:
+            fig.suptitle(f'Apartment {apartment} highlighted — other rooms shown in gray')
+            # The plot modules lay out their plan titles before this heading exists.
+            # Reserve a separate top band for it before exporting the image.
+            fig.tight_layout(rect=(0, 0, 1, 0.92))
         output = io.BytesIO()
         fig.savefig(output, format='png', dpi=110, bbox_inches='tight')
         return json.dumps({'png': base64.b64encode(output.getvalue()).decode('ascii')})

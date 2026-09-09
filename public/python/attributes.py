@@ -2,9 +2,9 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from shapely.geometry import Polygon, MultiPolygon
-from model import build_plan, outward_normal_from_segment
+from model import build_plan, outward_normal_from_segment, muted_room
 
-def visualize_plan(plan_id, color_by='wwr'):
+def visualize_plan(plan_id, color_by='wwr', apartment_id=None):
     """
     Plots one plan straight from the CSV, colouring rooms by a derived attribute.
 
@@ -44,6 +44,8 @@ def visualize_plan(plan_id, color_by='wwr'):
     # 3. Rooms + reconstructed window vectors
     first_node = next(iter(rooms))
     for n, data in rooms.items():
+        if muted_room(ax, data, apartment_id):
+            continue
         room_poly = data['geometry']
         val = data.get(color_by, 0)
 
@@ -73,6 +75,8 @@ def visualize_plan(plan_id, color_by='wwr'):
     # 4. Doors / passages
     legend_elements = set()
     for (u, v), edata in edges.items():
+        if apartment_id is not None and any(rooms[n]['unit_id'] != apartment_id for n in (u, v)):
+            continue
         ux, uy = rooms[u]['geometry'].centroid.x, rooms[u]['geometry'].centroid.y
         vx, vy = rooms[v]['geometry'].centroid.x, rooms[v]['geometry'].centroid.y
 
@@ -106,5 +110,5 @@ def visualize_plan(plan_id, color_by='wwr'):
     ax.axis('off')
     return fig
 
-def render(plan_id, attribute="wwr"):
-    return visualize_plan(plan_id, color_by=attribute)
+def render(plan_id, attribute="wwr", apartment_id=None):
+    return visualize_plan(plan_id, color_by=attribute, apartment_id=apartment_id)

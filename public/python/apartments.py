@@ -2,9 +2,9 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from shapely.geometry import Polygon, MultiPolygon
-from model import build_plan, outward_normal_from_segment
+from model import build_plan, outward_normal_from_segment, muted_room
 
-def visualize_apartment_ids(plan_id):
+def visualize_apartment_ids(plan_id, apartment_id=None):
     """
     Colour-codes rooms by apartment_id (derived from unit_id in the CSV).
     Public spaces (0) are grey; edges between different apartments are highlighted.
@@ -39,6 +39,8 @@ def visualize_apartment_ids(plan_id):
     # 3. Rooms
     legend_elements = set()
     for n, data in rooms.items():
+        if muted_room(ax, data, apartment_id):
+            continue
         room_poly = data['geometry']
         apt_id = data['apartment_id']
 
@@ -57,6 +59,8 @@ def visualize_apartment_ids(plan_id):
 
     # 4. Demising walls (edges crossing apartments)
     for (u, v) in edges:
+        if apartment_id is not None and any(rooms[n]['unit_id'] != apartment_id for n in (u, v)):
+            continue
         ux, uy = rooms[u]['geometry'].centroid.x, rooms[u]['geometry'].centroid.y
         vx, vy = rooms[v]['geometry'].centroid.x, rooms[v]['geometry'].centroid.y
 
@@ -80,5 +84,5 @@ def visualize_apartment_ids(plan_id):
     plt.tight_layout()
     return fig
 
-def render(plan_id, attribute="wwr"):
-    return visualize_apartment_ids(plan_id)
+def render(plan_id, attribute="wwr", apartment_id=None):
+    return visualize_apartment_ids(plan_id, apartment_id=apartment_id)

@@ -2,9 +2,9 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from shapely.geometry import Polygon, MultiPolygon
-from model import build_plan, outward_normal_from_segment
+from model import build_plan, outward_normal_from_segment, muted_room
 
-def visualize_openings(plan_id):
+def visualize_openings(plan_id, apartment_id=None):
     plan = build_plan(plan_id)
     rooms, meta = plan['rooms'], plan['meta']
 
@@ -16,6 +16,8 @@ def visualize_openings(plan_id):
         ax.plot(x, y, color='black', linewidth=3, zorder=1)
 
     for n, data in rooms.items():
+        if muted_room(ax, data, apartment_id):
+            continue
         room_poly = data['geometry']
         x, y = room_poly.exterior.xy
         color = 'wheat' if data['is_balcony'] else 'lightsteelblue'
@@ -26,10 +28,18 @@ def visualize_openings(plan_id):
                 va='center', fontweight='bold', zorder=6)
 
     for w in plan['windows']:
+        if apartment_id is not None and not any(room['unit_id'] == apartment_id and room['geometry'].distance(w['poly']) < 0.1 for room in rooms.values()):
+            x, y = w['poly'].exterior.xy
+            ax.fill(x, y, color='lightgray', alpha=0.6, zorder=5)
+            continue
         x, y = w['poly'].exterior.xy
         ax.fill(x, y, color='dodgerblue', alpha=0.9, zorder=5)
 
     for d in plan['doors']:
+        if apartment_id is not None and not any(room['unit_id'] == apartment_id and room['geometry'].distance(d['poly']) < 0.1 for room in rooms.values()):
+            x, y = d['poly'].exterior.xy
+            ax.fill(x, y, color='lightgray', alpha=0.6, zorder=5)
+            continue
         x, y = d['poly'].exterior.xy
         ax.fill(x, y, color='crimson' if d['is_entrance'] else 'purple', alpha=0.9, zorder=5)
 
@@ -51,5 +61,5 @@ def visualize_openings(plan_id):
     plt.tight_layout()
     return fig
 
-def render(plan_id, attribute="wwr"):
-    return visualize_openings(plan_id)
+def render(plan_id, attribute="wwr", apartment_id=None):
+    return visualize_openings(plan_id, apartment_id=apartment_id)

@@ -2,11 +2,11 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from shapely.geometry import Polygon, MultiPolygon
-from model import build_plan, outward_normal_from_segment
+from model import build_plan, outward_normal_from_segment, muted_room
 
 import model
 
-def render(plan_id=None, attribute="wwr"):
+def render(plan_id=None, attribute="wwr", apartment_id=None):
     selected_plans = model.plans()[:4]
     count = len(selected_plans)
     cols = min(2, count)
@@ -33,6 +33,8 @@ def render(plan_id=None, attribute="wwr"):
         pos = {}
         first_node = next(iter(rooms))
         for n, data in rooms.items():
+            if muted_room(ax, data, apartment_id):
+                continue
             poly = data['geometry']
             x, y = poly.exterior.xy
             ax.fill(x, y, alpha=0.3, color='#4A90E2', edgecolor='#333333', linewidth=1.5, zorder=2)
@@ -49,6 +51,8 @@ def render(plan_id=None, attribute="wwr"):
         # --- B. Connections ---
         first_edge = next(iter(edges), None)
         for (u, v), attr in edges.items():
+            if apartment_id is not None and any(rooms[n]['unit_id'] != apartment_id for n in (u, v)):
+                continue
             x_values = [pos[u][0], pos[v][0]]
             y_values = [pos[u][1], pos[v][1]]
             if attr['door_type'] == 0:

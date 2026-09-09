@@ -51,3 +51,38 @@ for (const chart of ['orientation', 'openings', 'window_heights', 'wwr_distribut
   assert((await call({ type: 'render', chart, plan: info.plans[0] })).png.length > 1000);
 }
 console.log('PASS: all 30 example plots, cached plans, missing columns, multiple floors, invalid selections, and a floor without windows.');
+
+// Selection changes drawing only, preserving full-floor calculations.
+const selectionInfo = await call({ type: 'upload', csv: first });
+const pid = selectionInfo.plans[0];
+assert.equal(selectionInfo.apartments[pid].length, 5);
+const uid = selectionInfo.apartments[pid][0];
+for (const chart of ['overview', 'attributes', 'apartments', 'orientation', 'openings']) {
+  const all = await call({ type: 'render', chart, plan: pid });
+  const selected = await call({ type: 'render', chart, plan: pid, apartment: uid });
+  assert.notEqual(selected.png, all.png);
+  const restored = await call({ type: 'render', chart, plan: pid, apartment: '' });
+  assert.equal(restored.png, all.png, `${chart}: All apartments restores original output`);
+}
+py.globals.set('selected_plan', pid); py.globals.set('selected_unit', uid);
+await py.runPythonAsync(`
+import apartments, attributes, orientation, openings, overview
+from matplotlib.colors import to_rgba
+cached = model.build_plan(selected_plan)
+expected = sum(r['unit_id'] != selected_unit for r in cached['rooms'].values())
+for module in [apartments, attributes, orientation, openings, overview]:
+    fig = module.render(selected_plan, apartment_id=selected_unit)
+    gray = sum(p.get_facecolor()[:3] == to_rgba('lightgray')[:3] for p in fig.axes[0].patches)
+    assert gray >= expected, (module.__name__, gray, expected)
+    labels = {t.get_text() for t in fig.axes[0].texts}
+    for n, room in cached['rooms'].items():
+        if room['unit_id'] != selected_unit:
+            assert not any(t == f'R{n}' or t.startswith(f'R{n}\\n') for t in labels)
+    assert model.build_plan(selected_plan) is cached
+    bridge.plt.close('all')
+`);
+await assert.rejects(call({ type: 'render', chart: 'apartments', plan: pid, apartment: 'unknown' }), /apartment is not/);
+const statsAll = await call({ type: 'render', chart: 'room_types', plan: pid });
+const statsSelected = await call({ type: 'render', chart: 'room_types', plan: pid, apartment: uid });
+assert.equal(statsAll.png, statsSelected.png);
+console.log('PASS: apartment selection, gray context, hidden labels, restored all-apartment plots, unchanged cache and statistics.');

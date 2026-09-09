@@ -347,7 +347,22 @@ def load_csv(text):
     units = units[~units.str.lower().isin(['nan', 'none', 'null', '0', '0.0'])]
     df = candidate
     return dict(building_id=str(df['building_id'].iloc[0]), floor_id=str(df['floor_id'].iloc[0]),
-                plans=sorted(rooms['plan_id'].unique().tolist()), rooms=len(rooms), units=units.nunique())
+                plans=sorted(rooms['plan_id'].unique().tolist()), rooms=len(rooms), units=units.nunique(),
+                apartments=apartment_options())
+
+def apartment_options():
+    areas = df[df['entity_type_n'] == 'area']
+    return {pid: sorted({uid for uid in rows['unit_id'].dropna()
+                        if uid.lower() not in ['nan', 'none', 'null', '0', '0.0']})
+            for pid, rows in areas.groupby('plan_id')}
+
+def muted_room(ax, room, apartment_id):
+    """Draw unselected rooms as context; never change cached plan data."""
+    if apartment_id is None or room['unit_id'] == apartment_id:
+        return False
+    x, y = room['geometry'].exterior.xy
+    ax.fill(x, y, color='lightgray', edgecolor='gray', alpha=0.6, linewidth=1)
+    return True
 
 def plans():
     if df is None:

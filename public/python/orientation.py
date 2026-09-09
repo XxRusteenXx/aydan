@@ -2,9 +2,9 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from shapely.geometry import Polygon, MultiPolygon
-from model import build_plan, outward_normal_from_segment
+from model import build_plan, outward_normal_from_segment, muted_room
 
-def visualize_window_orientation_outward(plan_id):
+def visualize_window_orientation_outward(plan_id, apartment_id=None):
     """
     Draws the reconstructed window centre of every room and forces the orientation
     arrow to point outward, using the nearest room-boundary segment instead of the
@@ -27,6 +27,8 @@ def visualize_window_orientation_outward(plan_id):
 
     # 2. Rooms and outward arrows
     for n, data in rooms.items():
+        if muted_room(ax, data, apartment_id):
+            continue
         room_poly = data['geometry']
 
         x, y = room_poly.exterior.xy
@@ -82,5 +84,5 @@ def visualize_window_orientation_outward(plan_id):
     plt.tight_layout()
     return fig
 
-def render(plan_id, attribute="wwr"):
-    return visualize_window_orientation_outward(plan_id)
+def render(plan_id, attribute="wwr", apartment_id=None):
+    return visualize_window_orientation_outward(plan_id, apartment_id=apartment_id)

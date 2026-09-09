@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Open the local address printed by Vite (normally http://localhost:5173). Choose a CSV from the repository's `floor` folder. The initial download may take tens of seconds. Click **Load floor**, choose a visualization, then **Show visualization**. Download the resulting PNG if needed.
+Open the local address printed by Vite (normally http://localhost:5173). Choose a CSV from the repository's `floor` folder. The initial download may take tens of seconds. Click **Load floor**, choose a visualization. Changes to the visualization, plan, apartment, or attribute redraw the plot automatically. Download the resulting PNG if needed.
 
 Node/Vite only serves static frontend files during development. It never receives the CSV and never launches Python. A Python installation is not required.
 
@@ -47,7 +47,7 @@ React sends `{type: 'upload', csv: text}` to the worker. Python retains a DataFr
 
 Comma-separated UTF-8 CSV, at most 10 MB / 20,000 rows / 5,000 room and opening records. Required columns: `building_id`, `floor_id`, `plan_id`, `unit_id`, `unit_usage`, `entity_type`, `entity_subtype`, `geom`, `elevation`, `height`, `roomtype`. Extra columns are ignored. Exactly one building and floor are accepted; multiple plan IDs on that floor are supported. Relevant geometry must be valid, nonempty Polygon WKT. Numeric IDs stay strings. Missing or nonnumeric heights are treated as missing, using v1 defaults where applicable.
 
-Floor statistics use all plans in the file rather than dataset sampling. Layout views select a plan. Room numbers are local display indices; apartment colors derive from `unit_id`. Apartment/room filtering and parameter editing are not implemented.
+Floor statistics use all plans in the file rather than dataset sampling. Layout views select a plan. Room numbers are local display indices; apartment colors derive from `unit_id`. The five layout plots have an Apartment selector (CSV unit IDs), defaulting to All apartments. Selecting a unit redraws the plot with other rooms in gray, without changing cached calculations. Statistics remain floor-wide. Plan or visualization changes reset the selector. Room filtering and parameter editing are not implemented.
 
 ## Inherited calculation limitations
 
@@ -57,4 +57,4 @@ The layout functions were extracted from `Data Visualisation Code_v1.ipynb` usin
 
 `npm test` uses the same WebAssembly Python version as the browser. It renders all ten plots for all three floor examples, checks PNG output and expected room/unit counts, confirms plan caching, and covers invalid uploads and no-window data. It downloads scientific packages into `.test-cache` on its first run. This test uses Node only as a test harness; the shipped application is entirely browser-side.
 
-The notebook extraction script is a development helper and is not run by the app. Re-running it overwrites the extracted model and five layout modules.
+The notebook extraction script is a historical development helper and is not run by the app. Do not rerun it on the working app: it overwrites the extracted model and five layout modules, including the later apartment-selection changes.

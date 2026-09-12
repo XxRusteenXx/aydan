@@ -12,6 +12,28 @@ function App() {
   const [attribute, setAttribute] = useState('wwr'); const [plot, setPlot] = useState(null);
   const [session, setSession] = useState(0);
   const [apartment, setApartment] = useState('');
+  const [heightGroup, setHeightGroup] = useState(0);
+  const [windowHeight, setWindowHeight] = useState('');
+  const heightMatters = ['attributes', 'orientation', 'window_heights', 'wwr_distribution', 'wwr_by_type'].includes(chart);
+  function selectHeight(groups, index = 0) {
+    setHeightGroup(index);
+    setWindowHeight(groups[index]?.value ?? '');
+  }
+  async function applyWindowHeight(event) {
+    event.preventDefault();
+    const height = Number(windowHeight);
+    if (windowHeight === '' || !Number.isFinite(height) || height <= 0) {
+      setStatus('Window height must be a number greater than zero.'); return;
+    }
+    setBusy(true);
+    try {
+      const { result } = await request('window_height', { original: info.window_heights[heightGroup].value, height });
+      setInfo(current => ({ ...current, ...result }));
+      selectHeight(result.window_heights, result.window_heights.findIndex(group => group.value === height));
+      await render();
+    } catch (error) { setStatus(error.message); }
+    finally { setBusy(false); }
+  }
   const layout = ['overview', 'attributes', 'apartments', 'orientation', 'openings'].includes(chart);
   const apartmentOptions = !info ? [] : chart === 'overview'
     ? [...new Set(Object.values(info.apartments).flat())].sort()
@@ -68,6 +90,7 @@ function App() {
     try {
       const { result } = await request('upload', { csv: await file.text() });
       setInfo(result); setPlan(result.plans[0]); setApartment('');
+      selectHeight(result.window_heights);
       await render(result.plans[0], chart, '');
     } catch (error) { setStatus(error.message); }
     finally { setBusy(false); }
@@ -100,6 +123,18 @@ function App() {
         </select></>}
         <p>Scope: {scope === 'floor' ? 'entire uploaded floor' : 'selected plan'}.</p>
       </section>
+      {heightMatters && <form onSubmit={applyWindowHeight}>
+        {info.window_heights.length ? <>
+          <label htmlFor="height-group">Current window height</label>{' '}
+          <select id="height-group" value={heightGroup} disabled={busy} onChange={event => selectHeight(info.window_heights, Number(event.target.value))}>
+            {info.window_heights.map((group, index) => <option key={index} value={index}>{group.value === null ? 'Missing in CSV' : `${group.value} m`} ({group.count} window records)</option>)}
+          </select>{' '}
+          <label htmlFor="window-height">New window height (m)</label>{' '}
+          <input id="window-height" type="number" step="any" required value={windowHeight} disabled={busy} onChange={event => setWindowHeight(event.target.value)} />
+          <button disabled={!ready || busy || windowHeight === '' || Number(windowHeight) <= 0}>Apply window height change</button>
+          <p>Updates all window records with the selected height across the uploaded floor, including other plans and apartments. Changes stay in this browser; your original CSV is unchanged.</p>
+        </> : <p>No windows in this floor to update.</p>}
+      </form>}
       <details><summary>About these calculations</summary><p>These plots use the v1 notebook calculations. WWR is estimated from room bounding dimensions. Shared walls may be inferred as passages. Window arrows represent the largest associated window per room. Apartment colors are derived from unit_id; missing units appear as shared spaces. Height distributions exclude values outside 0–6 m. Footprints keep only the largest connected polygon.</p></details>
     </>}
     {plot && <figure><img src={plot.src} alt={plot.label} /><figcaption><a href={plot.src} download={`${chart}.png`}>Download plot</a></figcaption></figure>}

@@ -86,3 +86,28 @@ const statsAll = await call({ type: 'render', chart: 'room_types', plan: pid });
 const statsSelected = await call({ type: 'render', chart: 'room_types', plan: pid, apartment: uid });
 assert.equal(statsAll.png, statsSelected.png);
 console.log('PASS: apartment selection, gray context, hidden labels, restored all-apartment plots, unchanged cache and statistics.');
+
+const heightInfo = await call({ type: 'upload', csv: first });
+const originalHeight = heightInfo.window_heights[0].value;
+const beforeHeightPlots = {};
+for (const chart of ['attributes', 'window_heights', 'wwr_distribution', 'wwr_by_type', 'openings']) {
+  beforeHeightPlots[chart] = (await call({ type: 'render', chart })).png;
+}
+await py.runPythonAsync('before_edit = model.df.copy(deep=True)');
+const changedHeight = await call({ type: 'window_height', original: originalHeight, height: 0.25 });
+assert(changedHeight.window_heights.some(group => group.value === 0.25));
+assert.equal(await py.runPythonAsync('len(model._cache)'), 0);
+await py.runPythonAsync("non_windows = ~model.df.entity_subtype_n.str.contains('WINDOW')\nassert model.df.loc[non_windows].equals(before_edit.loc[non_windows])");
+for (const chart of Object.keys(beforeHeightPlots)) {
+  const after = (await call({ type: 'render', chart })).png;
+  if (chart === 'openings') assert.equal(after, beforeHeightPlots[chart]);
+  else assert.notEqual(after, beforeHeightPlots[chart], `${chart} responds to height edits`);
+}
+for (const height of [0, -1, null, 'bad', true]) {
+  await assert.rejects(call({ type: 'window_height', original: 0.25, height }), /greater than zero/);
+}
+await assert.rejects(call({ type: 'window_height', original: 12345, height: 1 }), /No windows/);
+assert.deepEqual((await call({ type: 'upload', csv: first })).window_heights, heightInfo.window_heights);
+await call({ type: 'upload', csv: noWindows });
+await assert.rejects(call({ type: 'window_height', original: null, height: 1 }), /No windows/);
+console.log('PASS: height editing, updated plots, unchanged non-window rows, validation, and upload reset.');

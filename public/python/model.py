@@ -348,7 +348,25 @@ def load_csv(text):
     df = candidate
     return dict(building_id=str(df['building_id'].iloc[0]), floor_id=str(df['floor_id'].iloc[0]),
                 plans=sorted(rooms['plan_id'].unique().tolist()), rooms=len(rooms), units=units.nunique(),
-                apartments=apartment_options())
+                apartments=apartment_options(), window_heights=window_height_options())
+
+def window_height_options():
+    values = df.loc[df.entity_subtype_n.str.contains('WINDOW'), 'height']
+    return [dict(value=None if pd.isna(value) else float(value), count=int(count))
+            for value, count in values.value_counts(dropna=False).items()]
+
+def change_window_height(original, height):
+    plans()  # Require a loaded floor before making changes.
+    if isinstance(height, bool) or not isinstance(height, (int, float)) or not math.isfinite(height) or height <= 0:
+        raise ValueError('Window height must be a finite number greater than zero.')
+    windows = df.entity_subtype_n.str.contains('WINDOW')
+    matching = df.height.isna() if original is None else df.height.eq(original)
+    mask = windows & matching
+    if not mask.any():
+        raise ValueError('No windows have the selected height. Reload the height options.')
+    df.loc[mask, 'height'] = float(height)
+    _cache.clear()
+    return dict(window_heights=window_height_options())
 
 def apartment_options():
     areas = df[df['entity_type_n'] == 'area']

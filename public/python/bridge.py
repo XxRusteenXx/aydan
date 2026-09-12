@@ -15,6 +15,8 @@ def handle(payload):
     data = json.loads(payload)
     if data['type'] == 'upload':
         return json.dumps(model.load_csv(data['csv']))
+    if data['type'] == 'window_height':
+        return json.dumps(model.change_window_height(data.get('original'), data.get('height')))
     if data['type'] != 'render' or data.get('chart') not in CHARTS:
         raise ValueError('Unknown visualization request.')
     plans = model.plans()

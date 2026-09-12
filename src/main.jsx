@@ -97,15 +97,16 @@ function App() {
   }
   const scope = charts.find(([id]) => id === chart)[2];
   return <main>
-    <h1>Floor CSV viewer</h1>
-    <p>Choose a floor CSV to view its plans, apartments, rooms, and windows. Your file stays in this browser.</p>
+    <header className="masthead"><span>Floor / Studies</span><span>Spatial analysis</span></header>
+    <h1>Space, understood.</h1>
+    <p className="intro">Explore the architecture of a floor.<br />Upload a CSV to study its plans, rooms and openings.</p>
     <form onSubmit={upload}>
       <label htmlFor="csv">Floor CSV (up to 10 MB)</label>{' '}
       <input id="csv" type="file" accept=".csv,text/csv" disabled={busy} required onChange={event => setFile(event.target.files[0])} />
       <button disabled={!ready || busy || !file}>Load floor</button>
     </form>
     <p role="status" aria-live="polite" className="status">{status}</p>
-    <button onClick={reset}>Reset Python / clear floor</button>
+    <button className="secondary" onClick={reset}>Reset / clear floor</button>
     {info && <>
       <p>Building {info.building_id} · Floor {info.floor_id} · {info.plans.length} plan(s) · {info.rooms} room/area records · {info.units} units</p>
       <section>
@@ -125,10 +126,10 @@ function App() {
       </section>
       {heightMatters && <form onSubmit={applyWindowHeight}>
         {info.window_heights.length ? <>
-          <label htmlFor="height-group">Current window height</label>{' '}
+          {info.window_heights.length > 1 && <><label htmlFor="height-group">Current window height</label>{' '}
           <select id="height-group" value={heightGroup} disabled={busy} onChange={event => selectHeight(info.window_heights, Number(event.target.value))}>
             {info.window_heights.map((group, index) => <option key={index} value={index}>{group.value === null ? 'Missing in CSV' : `${group.value} m`} ({group.count} window records)</option>)}
-          </select>{' '}
+          </select>{' '}</>}
           <label htmlFor="window-height">New window height (m)</label>{' '}
           <input id="window-height" type="number" step="any" required value={windowHeight} disabled={busy} onChange={event => setWindowHeight(event.target.value)} />
           <button disabled={!ready || busy || windowHeight === '' || Number(windowHeight) <= 0}>Apply window height change</button>

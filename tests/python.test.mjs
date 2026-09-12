@@ -23,7 +23,7 @@ async function call(data) {
   finally { py.globals.delete('payload'); }
 }
 for (const [file, rooms, units] of [['floor_1588.csv', 21, 2], ['floor_9705.csv', 55, 5], ['floor_9706.csv', 55, 5]]) {
-  const csv = await readFile(path.join(root, '../floor', file), 'utf8');
+  const csv = await readFile(path.join(root, 'tests/fixtures', file), 'utf8');
   const info = await call({ type: 'upload', csv });
   assert.equal(info.rooms, rooms); assert.equal(info.units, units); assert.equal(info.plans.length, 1);
   for (const [chart] of charts) {
@@ -41,8 +41,8 @@ await assert.rejects(call({ type: 'render', chart: '../model' }), /Unknown visua
 await assert.rejects(call({ type: 'render', chart: 'attributes', plan: 'does-not-exist' }), /not in the uploaded/);
 await assert.rejects(call({ type: 'upload', csv: 'foo,bar\n1,2\n' }), /Missing CSV columns/);
 await assert.rejects(call({ type: 'render', chart: 'overview' }), /Load a floor CSV first/);
-const first = await readFile(path.join(root, '../floor/floor_9705.csv'), 'utf8');
-const second = await readFile(path.join(root, '../floor/floor_9706.csv'), 'utf8');
+const first = await readFile(path.join(root, 'tests/fixtures/floor_9705.csv'), 'utf8');
+const second = await readFile(path.join(root, 'tests/fixtures/floor_9706.csv'), 'utf8');
 await assert.rejects(call({ type: 'upload', csv: first.trimEnd() + '\n' + second.slice(second.indexOf('\n') + 1) }), /exactly one floor/);
 py.globals.set('original', first);
 const noWindows = await py.runPythonAsync("import io\nx = model.pd.read_csv(io.StringIO(original), dtype=str)\nx = x[~x.entity_subtype.fillna('').str.contains('WINDOW')]\nx.to_csv(index=False)");

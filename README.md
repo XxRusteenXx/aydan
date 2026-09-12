@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Open the local address printed by Vite (normally http://localhost:5173). Choose a CSV from the repository's `floor` folder. The initial download may take tens of seconds. Click **Load floor**, choose a visualization. Changes to the visualization, plan, apartment, or attribute redraw the plot automatically. Download the resulting PNG if needed.
+Open the local address printed by Vite (normally http://localhost:5173). Choose a CSV from the repository's `tests/fixtures` folder. The initial download may take tens of seconds. Click **Load floor**, choose a visualization. Changes to the visualization, plan, apartment, or attribute redraw the plot automatically. Download the resulting PNG if needed.
 
 Node/Vite only serves static frontend files during development. It never receives the CSV and never launches Python. A Python installation is not required.
 
